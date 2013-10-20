@@ -25,6 +25,9 @@ module Anemone
     # Hash of options for the crawl
     attr_reader :opts
 
+    attr_accessor :page_count
+
+
     DEFAULT_OPTS = {
       # run 4 Tentacle threads to fetch pages
       :threads => 4,
@@ -79,7 +82,7 @@ module Anemone
       @skip_link_patterns = []
       @after_crawl_blocks = []
       @opts = opts
-
+      @page_count = 0
       yield self if block_given?
     end
 
@@ -185,7 +188,14 @@ module Anemone
             break
           end
         end
+        
+        if @page_count >= @opts[:page_limit]
+          @tentacles.each{|t| t.kill}
+          break
+        end
+        @page_count += 1
       end
+
 
       @tentacles.each { |thread| thread.join }
       do_after_crawl_blocks
